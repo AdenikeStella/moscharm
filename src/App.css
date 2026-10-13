@@ -26,12 +26,13 @@
   justify-self: center;
   font-family: serif;
   font-size: 18px;
-  cursor: not-allowed;
+  cursor: pointer;
 }
 
 .checkoutButton:disabled {
   background-color: grey;
   color: black;
+    cursor: not-allowed;
 }
 
 .modal-overlay {
