@@ -115,7 +115,7 @@ export const Checkout = () => {
             </p>
 
             <Link to="/" className="modal-btn" >
-              Close
+              Back to Homepage
             </Link>
           </div>
         </div>
