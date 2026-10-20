@@ -1,5 +1,5 @@
 // src/pages/Checkout.js
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "../context/CartContext";
 import { useTitle } from "../hooks/useTitle";
 import { PaystackButton } from "react-paystack";
@@ -9,26 +9,55 @@ export const Checkout = () => {
   const { total, cartList } = useCart();
   useTitle("Checkout");
   const [successModal, setSuccessModal] = useState(false);
-
-  // Form state
+  const [error, setError] = useState("")
   const [customer, setCustomer] = useState({
     name: "",
     email: "",
     phone: "",
   });
 
-  // Paystack config
-  const publicKey = "pk_test_4fdfdaa28789d5e5bb78a219877093d86e40b1a7"; // replace with your public key
-  const amount = total * 100; // Paystack expects amount in kobo
+  const errors = {};
+  if (!customer.name.trim()) errors.name = "Name is required";
+  if (!/\S+@\S+\.\S+/.test(customer.email)) errors.email = "Enter a valid email";
+  if (customer.phone && !/^\+?\d{10,15}$/.test(customer.phone))
+    errors.phone = "Enter a valid phone number";
+
+  const handleChange = (e) => {
+    setError("");
+    setCustomer({ ...customer, [e.target.name]: e.target.value });
+  };
+
+  const publicKey = process.env.REACT_APP_PAYSTACK_PUBLIC_KEY
+  const amount = total * 100;
+
+  const handlePaymentSuccess = (response) => {
+    try {
+      setSuccessModal(true);
+    }
+    catch (error) {
+      setError("There was an error while trying to complete payment. Please try again")
+    }
+  };
+
+
 
   const componentProps = {
     email: customer.email,
     amount,
     publicKey,
     text: "Pay Now",
-    onSuccess: () => setSuccessModal(true),
-    onClose: () => alert("Payment closed"),
+    onSuccess: handlePaymentSuccess,
+    onClose: () => setError("There was an error while trying to complete payment. Please try again")
   };
+
+  if (cartList.length === 0 && !successModal) {
+    return (
+      <main>
+        <p>Your cart is empty.</p>
+        <Link to="/">Continue shopping</Link>
+      </main>
+    );
+  }
 
   return (
     <main>
@@ -50,34 +79,36 @@ export const Checkout = () => {
           <div>
             <label>Name:</label>
             <input
+            id="name"
+            name="name"
               type="text"
               value={customer.name}
-              onChange={(e) =>
-                setCustomer({ ...customer, name: e.target.value })
-              }
-              required
+              onChange={handleChange}
             />
+            {errors.name && <p role="alert">{errors.name}</p>}
           </div>
           <div>
             <label>Email:</label>
             <input
+            id="email"
+            name="email"
               type="email"
               value={customer.email}
-              onChange={(e) =>
-                setCustomer({ ...customer, email: e.target.value })
-              }
-              required
+              onChange={handleChange}
             />
+            {errors.email && <p role="alert">{errors.email}</p>}
+
           </div>
           <div>
-            <label>Phone:</label>
+            <label>Phone Number:</label>
             <input
+            id="phone"
+            name="phone"
               type="tel"
               value={customer.phone}
-              onChange={(e) =>
-                setCustomer({ ...customer, phone: e.target.value })
-              }
+              onChange={handleChange}
             />
+            {errors.phone && <p role="alert">{errors.phone}</p>}
           </div>
         </form>
 
@@ -85,7 +116,25 @@ export const Checkout = () => {
         <PaystackButton {...componentProps} />
       </section>
 
-            {/* Success Modal */}
+      {/* error modal */}
+      {error && (
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="success-title"
+        >
+          <div className="modal">
+            <p>
+                                    {error}
+            </p>
+                      <Link to="/" className="modal-btn">Go back Home</Link>
+
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
       {successModal && (
         <div
           className="modal-overlay"
